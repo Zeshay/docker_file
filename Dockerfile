@@ -1,25 +1,46 @@
-#<-----------Stage 1---------->
-FROM python:3 as builder
+# -------- Stage 1: Builder --------
+FROM python:3.10-slim as builder
 
 WORKDIR /app
 
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install dependencies into a virtual environment
 COPY requirements.txt .
+RUN python -m venv /opt/venv && \
+    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
-RUN pip install --prefix=/install -r requirements.txt
-
-#<-----Stage2------->
-
+# -------- Stage 2: Runtime --------
 FROM python:3.10-slim
 
+# Create appuser
+RUN adduser --disabled-password --gecos '' appuser
+
+# Set up working directory
 WORKDIR /app
 
-ENV PYTHONUNBUFFERED=1
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
 
-COPY --from=builder /install /usr/local
+# Activate virtualenv by default
+ENV PATH="/opt/venv/bin:$PATH"
 
+# Copy app code
 COPY . .
 
+# Set file ownership to appuser
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
 EXPOSE 8000
 
-CMD ["python","manage.py","runserver","0.0.0.0:80000"]
+# Run app
+CMD ["gunicorn", "notesapp.wsgi:application", "--bind", "0.0.0.0:8000"]
 
