@@ -15,6 +15,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''#!/bin/bash
+                set -e
                 python3 -m venv venv
                 source venv/bin/activate
                 pip install --upgrade pip
@@ -26,8 +27,11 @@ pipeline {
         stage('Run Application') {
             steps {
                 sh '''#!/bin/bash
+                set -e
                 source venv/bin/activate
-                nohup python manage.py runserver 0.0.0.0:$APP_PORT > output.log 2>&1 &
+                nohup python manage.py runserver 0.0.0.0:$APP_PORT > django.log 2>&1 &
+                sleep 5
+                tail -n 20 django.log
                 '''
             }
         }
