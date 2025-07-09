@@ -35,7 +35,6 @@ pipeline {
                     # Run Gunicorn in background
                     ./venv/bin/gunicorn notesapp.wsgi:application \
                         --bind $APP_HOST:$APP_PORT \
-                        --daemon \
                         --access-logfile logs/access.log \
                         --error-logfile logs/error.log
 
