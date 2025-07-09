@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         APP_PORT = "8000"
+        APP_HOST = "0.0.0.0"
     }
 
     stages {
@@ -22,17 +23,28 @@ pipeline {
             }
         }
 
-       stage('Run Django') {
+        stage('Run with Gunicorn') {
             steps {
                 sh '''
-                    tmux kill-session -t django || true  # Kill if already exists
-                    tmux new-session -d -s django './venv/bin/python manage.py runserver 0.0.0.0:$APP_PORT'
-                    sleep 5
-                    tmux ls
-                    ps aux | grep manage.py
-                '''
-    }
-}
+                    # Kill previous Gunicorn if running
+                    pkill -f "gunicorn" || true
 
+                    # Create logs folder
+                    mkdir -p logs
+
+                    # Run Gunicorn in background
+                    ./venv/bin/gunicorn notesapp.wsgi:application \
+                        --bind $APP_HOST:$APP_PORT \
+                        --daemon \
+                        --access-logfile logs/access.log \
+                        --error-logfile logs/error.log
+
+                    sleep 3
+                    ps aux | grep gunicorn
+                    tail -n 10 logs/access.log || true
+                    tail -n 10 logs/error.log || true
+                '''
+            }
+        }
     }
 }
