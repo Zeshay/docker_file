@@ -22,14 +22,18 @@ pipeline {
             }
         }
 
-        stage('Run Django') {
-            steps {
-                sh '''
-                    nohup ./venv/bin/python manage.py runserver 0.0.0.0:$APP_PORT > django.log 2>&1 &
-                    sleep 5
-                    ps aux | grep manage.py
-                    tail -n 10 django.log
-                '''
+       stage('Run Django') {
+    steps {
+        sh '''
+            . venv/bin/activate
+            nohup python manage.py runserver 0.0.0.0:$APP_PORT > /tmp/django.log 2>&1 &
+            sleep 5
+            ps aux | grep manage.py
+            tail -n 10 /tmp/django.log
+        '''
+    }
+}
+
             }
         }
     }
