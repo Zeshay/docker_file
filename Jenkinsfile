@@ -6,29 +6,36 @@ pipeline {
     }
 
     stages {
-        stage('Clone Repo') {
+        stage('Clone Repository') {
             steps {
                 git branch: 'main', url: 'https://github.com/Umair1012/django-notes-app.git'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Setup & Install') {
             steps {
-                sh '''#!/bin/bash
-                set -e
+                sh '''
                 python3 -m venv venv
-                source venv/bin/activate
-                pip install --upgrade pip
+                . venv/bin/activate
                 pip install -r requirements.txt
                 '''
             }
         }
 
-        stage('Run Application') {
+        stage('Apply Migrations') {
             steps {
-                sh '''#!/bin/bash
-                set -e
-                source venv/bin/activate
+                sh '''
+                . venv/bin/activate
+                python manage.py makemigrations
+                python manage.py migrate
+                '''
+            }
+        }
+
+        stage('Start Django App') {
+            steps {
+                sh '''
+                . venv/bin/activate
                 nohup python manage.py runserver 0.0.0.0:$APP_PORT > django.log 2>&1 &
                 sleep 5
                 tail -n 20 django.log
