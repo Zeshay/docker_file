@@ -25,7 +25,7 @@ pipeline {
         stage('Run Django') {
             steps {
                 sh '''
-                    nohup ./venv/bin/python manage.py runserver 0.0.0.0:$APP_PORT > /tmp/django.log 2>&1 &
+                    ./venv/bin/python manage.py runserver 0.0.0.0:$APP_PORT
                     sleep 5
                     ps aux | grep manage.py
                     tail -n 10 /tmp/django.log
