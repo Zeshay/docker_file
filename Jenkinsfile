@@ -7,31 +7,41 @@ pipeline {
     }
 
     stages {
-        stage('Clone Repository') {
+        stage('Clone Repo') {
             steps {
                 git branch: 'main', url: 'https://github.com/Umair1012/django-notes-app.git'
             }
         }
 
-        stage('Install Requirements') {
+        stage('Install Dependencies') {
             steps {
                 sh '''
                     python3 -m venv venv
-                    venv/bin/pip install -r requirements.txt
+                    ./venv/bin/pip install --upgrade pip
+                    ./venv/bin/pip install -r requirements.txt
                 '''
             }
         }
 
-        stage('Start Gunicorn') {
+        stage('Run with Gunicorn') {
             steps {
                 sh '''
-                    pkill -f gunicorn || true
+                    # Kill previous Gunicorn if running
+                    pkill -f "gunicorn" || true
+
+                    # Create logs folder
                     mkdir -p logs
 
-                    venv/bin/gunicorn notesapp.wsgi:application \
+                    # Run Gunicorn in background
+                    ./venv/bin/gunicorn notesapp.wsgi:application \
                         --bind $APP_HOST:$APP_PORT \
                         --access-logfile logs/access.log \
-                        --error-logfile logs/error.log &
+                        --error-logfile logs/error.log
+
+                    sleep 3
+                    ps aux | grep gunicorn
+                    tail -n 10 logs/access.log || true
+                    tail -n 10 logs/error.log || true
                 '''
             }
         }
