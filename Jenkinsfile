@@ -22,15 +22,17 @@ pipeline {
             }
         }
 
-        stage('Run Django') {
+       stage('Run Django') {
             steps {
                 sh '''
-                    ./venv/bin/python manage.py runserver 0.0.0.0:$APP_PORT
+                    tmux kill-session -t django || true  # Kill if already exists
+                    tmux new-session -d -s django './venv/bin/python manage.py runserver 0.0.0.0:$APP_PORT'
                     sleep 5
+                    tmux ls
                     ps aux | grep manage.py
-                    tail -n 10 /tmp/django.log
                 '''
-            }
-        }
+    }
+}
+
     }
 }
