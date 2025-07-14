@@ -1,4 +1,4 @@
-# -------- Stage 1: Builder --------
+# -------- Stage 1.0: Builder --------
 FROM python:3.10-slim as builder
 
 WORKDIR /app
