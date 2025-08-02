@@ -1,46 +1,23 @@
-# -------- Stage 1.0: Builder --------
-FROM python:3.10-slim as builder
+FROM python:3.10-slim
 
+# Set working directory
 WORKDIR /app
 
-# Install build dependencies
+# Install system dependencies (for psycopg2 etc.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies into a virtual environment
+# Copy requirements and install dependencies
 COPY requirements.txt .
-RUN python -m venv /opt/venv && \
-    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# -------- Stage 2: Runtime --------
-FROM python:3.10-slim
-
-# Create appuser
-RUN adduser --disabled-password --gecos '' appuser
-
-# Set up working directory
-WORKDIR /app
-
-# Copy virtual environment from builder
-COPY --from=builder /opt/venv /opt/venv
-
-# Activate virtualenv by default
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Copy app code
+# Copy the application code
 COPY . .
 
-# Set file ownership to appuser
-RUN chown -R appuser:appuser /app
-
-# Switch to non-root user
-USER appuser
-
-# Expose port
+# Expose Django default port
 EXPOSE 8000
 
-# Run app
-CMD ["gunicorn", "notesapp.wsgi:application", "--bind", "0.0.0.0:8000"]
-
+# Run development server (do not use in production)
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
